@@ -39,11 +39,9 @@ export default function ProjectsPage() {
   }, [authLoading, user?.id]);
 
   const handleCreate = () => {
-    console.log('handleCreate called');
     setEditingProject(null);
-    setError(''); 
+    setError('');
     setIsModalOpen(true);
-    console.log('isModalOpen set to true');
   };
 
   const handleEdit = (project: Project) => {

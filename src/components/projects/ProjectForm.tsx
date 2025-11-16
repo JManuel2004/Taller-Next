@@ -17,8 +17,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   onCancel,
   isLoading = false,
 }) => {
-  console.log('ProjectForm render', { project: project ? { id: project.id, title: project.title } : null });
-  
   const [formData, setFormData] = useState<CreateProjectRequest>({
     title: project?.title || '',
     description: project?.description || '',

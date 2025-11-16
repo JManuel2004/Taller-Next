@@ -17,8 +17,6 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   size = 'md',
 }) => {
-  console.log('Modal render', { isOpen, title, size });
-  
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -78,7 +76,6 @@ export const Modal: React.FC<ModalProps> = ({
           `}
           style={{ position: 'relative' }}
         >
-          <div className="text-black p-2 bg-yellow-100">DEBUG MODAL</div>
           {/* Header */}
           {title && (
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
