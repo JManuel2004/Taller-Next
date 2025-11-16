@@ -1,7 +1,16 @@
 import { httpClient } from './http.client';
-import { LoginRequest, LoginResponse, CheckAuthResponse, User } from '@/types';
+import { LoginRequest, LoginResponse, CheckAuthResponse, RegisterRequest, RegisterResponse, User } from '@/types';
 
 class AuthService {
+  async register(data: RegisterRequest): Promise<RegisterResponse> {
+    try {
+      const response = await httpClient.post<RegisterResponse>('/auth/register', data);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
       const response = await httpClient.post<LoginResponse>('/auth/login', credentials);

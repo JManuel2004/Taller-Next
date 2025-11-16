@@ -28,13 +28,22 @@ class HttpClient {
 
     this.client.interceptors.response.use(
       (response) => response,
-      (error: AxiosError) => {
+      (error: AxiosError<{ message?: string; error?: string }>) => {
         if (error.response?.status === 401) {
           this.removeToken();
-          if (typeof window !== 'undefined') {
+          if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
             window.location.href = '/login';
           }
         }
+        
+        // Mejorar el mensaje de error para que sea más descriptivo
+        if (error.response?.data) {
+          const errorMessage = error.response.data.message || error.response.data.error || error.message;
+          const enhancedError = new Error(errorMessage);
+          (enhancedError as any).response = error.response;
+          return Promise.reject(enhancedError);
+        }
+        
         return Promise.reject(error);
       }
     );

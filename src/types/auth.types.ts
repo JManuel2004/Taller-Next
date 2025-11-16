@@ -13,6 +13,21 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  fullname: string;
+  role?: UserRole;
+}
+
+export interface RegisterResponse {
+  id: string;
+  email: string;
+  fullname: string;
+  role: UserRole;
+  isActive: boolean;
+}
+
 export interface LoginResponse {
   id: string;
   email: string;
@@ -33,6 +48,7 @@ export interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
 }

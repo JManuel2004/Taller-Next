@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthContextType, User, LoginRequest } from '@/types';
+import { AuthContextType, User, LoginRequest, RegisterRequest } from '@/types';
 import { authService } from '@/services';
 import { AxiosError } from 'axios';
 
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuth();
   }, [checkAuth]);
 
-  const login = async (credentials: LoginRequest) => {
+  const login = useCallback(async (credentials: LoginRequest) => {
     try {
       setIsLoading(true);
       const response = await authService.login(credentials);
@@ -65,13 +65,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
         router.push('/dashboard/user');
       }
     } catch (error) {
-      const axiosError = error as AxiosError<{ message: string }>;
-      const errorMessage = axiosError.response?.data?.message || 'Error al iniciar sesión';
+      if (error instanceof Error) {
+        throw error;
+      }
+      const axiosError = error as AxiosError<{ message?: string; error?: string }>;
+      const errorMessage = axiosError.response?.data?.message || axiosError.response?.data?.error || (error as any)?.message || 'Error al iniciar sesión';
       throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router]);
+
+  const register = useCallback(async (data: RegisterRequest) => {
+    try {
+      setIsLoading(true);
+      await authService.register(data);
+      // Después del registro, hacer login automático
+      await login({
+        email: data.email,
+        password: data.password,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      const axiosError = error as AxiosError<{ message?: string; error?: string }>;
+      const errorMessage = axiosError.response?.data?.message || axiosError.response?.data?.error || (error as any)?.message || 'Error al registrar usuario';
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [login]);
 
   const logout = useCallback(async () => {
     try {
@@ -89,6 +113,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     isAuthenticated: !!user && !!token,
     login,
+    register,
     logout,
     checkAuth,
   };

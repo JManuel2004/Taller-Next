@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useAuth } from '@/context';
 import { LoginRequest } from '@/types';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const { login, isLoading } = useAuth();
@@ -138,10 +139,16 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-gray-200">
+            <p className="text-sm text-gray-600 text-center mb-4">
+              ¿No tienes una cuenta?{' '}
+              <Link href="/register" className="text-gray-900 font-medium hover:underline">
+                Regístrate
+              </Link>
+            </p>
             <p className="text-xs text-gray-500 font-medium mb-2">Credenciales de prueba:</p>
             <div className="text-xs text-gray-600 space-y-1">
               <p><strong>Superadmin:</strong> admin@example.com / Admin123!</p>
-              <p><strong>Usuario:</strong> user1@example.com / User123!</p>
+              <p><strong>Usuario:</strong> usuario1@example.com / User123!</p>
             </div>
           </div>
         </form>
