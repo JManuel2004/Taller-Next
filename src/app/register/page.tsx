@@ -11,7 +11,7 @@ export default function RegisterPage() {
     email: '',
     password: '',
     fullname: '',
-    role: 'usuario',
+    role: 'usuario', // Siempre será usuario
   });
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string>('');
@@ -61,13 +61,14 @@ export default function RegisterPage() {
     }
 
     try {
-      await register(formData);
+      // Aseguramos que siempre sea usuario
+      await register({ ...formData, role: 'usuario' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrar usuario');
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     
@@ -173,7 +174,7 @@ export default function RegisterPage() {
               )}
             </div>
 
-            <div className="mb-4">
+            <div className="mb-6">
               <label
                 htmlFor="confirmPassword"
                 className="block text-sm font-medium text-gray-700 mb-2"
@@ -194,25 +195,6 @@ export default function RegisterPage() {
               {fieldErrors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-600">{fieldErrors.confirmPassword}</p>
               )}
-            </div>
-
-            <div className="mb-6">
-              <label
-                htmlFor="role"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Rol
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:border-gray-500"
-              >
-                <option value="usuario">Usuario</option>
-                <option value="superadmin">Superadmin</option>
-              </select>
             </div>
           </div>
 
@@ -239,4 +221,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

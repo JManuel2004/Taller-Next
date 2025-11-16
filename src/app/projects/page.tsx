@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { DashboardLayout, ProjectCard, ProjectForm, Modal, Button, LoadingSpinner, Card } from '@/components';
+import { DashboardLayout, ProjectForm, Modal, Button, LoadingSpinner, Card } from '@/components';
 import { projectService } from '@/services';
 import { Project, CreateProjectRequest, UpdateProjectRequest } from '@/types';
 import { useAuth } from '@/context';
@@ -168,13 +168,40 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onView={handleView}
-            />
+            <Card key={project.id} className="p-4">
+              <h3 className="font-bold text-lg mb-1">{project.title}</h3>
+              <p className="text-gray-700 mb-2">{project.description}</p>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  onClick={() => router.push(`/projects/${project.id}/tasks`)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Ver Tareas
+                </Button>
+                <Button
+                  onClick={() => router.push(`/projects/${project.id}/add-task`)}
+                  variant="primary"
+                  className="flex-1"
+                >
+                  Añadir Tarea
+                </Button>
+                <Button
+                  onClick={() => handleEdit(project)}
+                  variant="secondary"
+                  className="flex-1"
+                >
+                  Editar
+                </Button>
+                <Button
+                  onClick={() => handleDelete(project.id)}
+                  variant="danger"
+                  className="flex-1"
+                >
+                  Eliminar
+                </Button>
+              </div>
+            </Card>
           ))}
         </div>
       )}

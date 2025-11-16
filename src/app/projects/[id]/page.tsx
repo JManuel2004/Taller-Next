@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { DashboardLayout, Card, CardHeader, CardTitle, CardContent, Button, LoadingSpinner } from '@/components';
-import { projectService } from '@/services';
-import { Project } from '@/types';
+import { projectService, taskService } from '@/services';
+import { Project, Task } from '@/types';
 import { useAuth } from '@/context';
 
 const statusLabels: Record<string, string> = {
@@ -19,11 +19,38 @@ const statusColors: Record<string, string> = {
   completed: 'bg-green-100 text-green-800',
 };
 
+const taskStatusLabels: Record<string, string> = {
+  pending: 'Pendiente',
+  'in-progress': 'En Progreso',
+  completed: 'Completada',
+  cancelled: 'Cancelada',
+};
+
+const taskStatusColors: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  'in-progress': 'bg-blue-100 text-blue-800',
+  completed: 'bg-green-100 text-green-800',
+  cancelled: 'bg-gray-100 text-gray-800',
+};
+
+const priorityLabels: Record<string, string> = {
+  low: 'Baja',
+  medium: 'Media',
+  high: 'Alta',
+};
+
+const priorityColors: Record<string, string> = {
+  low: 'bg-gray-100 text-gray-700',
+  medium: 'bg-orange-100 text-orange-700',
+  high: 'bg-red-100 text-red-700',
+};
+
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const [project, setProject] = useState<Project | null>(null);
+  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
@@ -41,6 +68,10 @@ export default function ProjectDetailPage() {
       setError('');
       const data = await projectService.getById(projectId);
       setProject(data);
+      
+      // Cargar tareas del proyecto
+      const tasks = await taskService.getByProject(projectId);
+      setProjectTasks(tasks);
     } catch (err) {
       console.error('Error loading project:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar el proyecto';
@@ -161,22 +192,88 @@ export default function ProjectDetailPage() {
                 </div>
               )}
 
-              {project.tasks && project.tasks.length > 0 && (
+              {projectTasks && projectTasks.length > 0 ? (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Tareas ({project.tasks.length})
-                  </h3>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Tareas ({projectTasks.length})
+                    </h3>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => router.push(`/projects/${projectId}/tasks`)}
+                    >
+                      Ver todas las tareas
+                    </Button>
+                  </div>
                   <div className="space-y-2">
-                    {project.tasks.map((task) => (
+                    {projectTasks.slice(0, 3).map((task) => (
                       <div
                         key={task.id}
-                        className="p-3 bg-gray-50 border border-gray-200 rounded"
+                        className="p-4 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition-colors cursor-pointer"
+                        onClick={() => router.push(`/tasks/${task.id}`)}
                       >
-                        <p className="font-medium text-gray-900">{task.title}</p>
-                        <p className="text-sm text-gray-600">Estado: {task.status}</p>
+                        <div className="flex justify-between items-start mb-2">
+                          <p className="font-medium text-gray-900">{task.title}</p>
+                          <div className="flex gap-2">
+                            <span
+                              className={`
+                                px-2 py-1 text-xs font-semibold rounded-full
+                                ${taskStatusColors[task.status] || taskStatusColors.pending}
+                              `}
+                            >
+                              {taskStatusLabels[task.status] || task.status}
+                            </span>
+                            <span
+                              className={`
+                                px-2 py-1 text-xs font-semibold rounded-full
+                                ${priorityColors[task.priority] || priorityColors.medium}
+                              `}
+                            >
+                              {priorityLabels[task.priority] || task.priority}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {task.description && (
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-1">{task.description}</p>
+                        )}
+                        
+                        <div className="flex gap-4 text-xs text-gray-500">
+                          {task.assignedTo && (
+                            <span>Asignado a: {task.assignedTo.fullname}</span>
+                          )}
+                          {task.dueDate && (
+                            <span>
+                              Vence: {new Date(task.dueDate).toLocaleDateString('es-ES')}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ))}
+                    {projectTasks.length > 3 && (
+                      <div className="text-center pt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push(`/projects/${projectId}/tasks`)}
+                        >
+                          Ver {projectTasks.length - 3} tarea{projectTasks.length - 3 !== 1 ? 's' : ''} más
+                        </Button>
+                      </div>
+                    )}
                   </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 bg-gray-50 rounded border border-gray-200">
+                  <p className="text-gray-600 mb-3">Este proyecto no tiene tareas aún</p>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => router.push(`/projects/${projectId}/tasks`)}
+                  >
+                    Crear primera tarea
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -195,4 +292,3 @@ export default function ProjectDetailPage() {
     </DashboardLayout>
   );
 }
-
