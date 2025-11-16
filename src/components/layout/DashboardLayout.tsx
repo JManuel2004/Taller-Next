@@ -1,9 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useAuth } from '@/context';
 import { Header } from './Header';
-import { LoadingSpinner } from '@/components/ui';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -16,16 +14,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   title,
   subtitle,
 }) => {
-  const { isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header title={title} subtitle={subtitle} />

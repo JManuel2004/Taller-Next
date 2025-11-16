@@ -1,31 +1,44 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import type { JWTPayload } from '@/types';
+
+function decodeJwt(token: string): JWTPayload | null {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  const token = request.cookies.get('token')?.value || 
-                request.headers.get('authorization')?.replace('Bearer ', '');
+  const token =
+    request.cookies.get('token')?.value ||
+    request.headers.get('authorization')?.replace('Bearer ', '');
 
   const publicRoutes = ['/login', '/register'];
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
   const protectedRoutes = ['/dashboard', '/projects', '/tasks', '/users'];
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
 
   if (isPublicRoute && token) {
-    try {
-      const payload = JSON.parse(
-        Buffer.from(token.split('.')[1], 'base64').toString()
-      );
-      
+    const payload = decodeJwt(token);
+    if (payload) {
       if (payload.role === 'superadmin') {
         return NextResponse.redirect(new URL('/dashboard/admin', request.url));
       } else {
         return NextResponse.redirect(new URL('/dashboard/user', request.url));
       }
-    } catch (error) {
-      console.error('Error decodificando token:', error);
     }
   }
 
@@ -36,42 +49,36 @@ export function middleware(request: NextRequest) {
   }
 
   if (token && isProtectedRoute) {
-    try {
-      const payload = JSON.parse(
-        Buffer.from(token.split('.')[1], 'base64').toString()
-      );
+    const payload = decodeJwt(token);
 
-      if (
-        (pathname.startsWith('/dashboard/admin') || pathname.startsWith('/users')) &&
-        payload.role !== 'superadmin'
-      ) {
-        return NextResponse.redirect(new URL('/dashboard/user', request.url));
-      }
+    if (!payload) {
+      const loginUrl = new URL('/login', request.url);
+      return NextResponse.redirect(loginUrl);
+    }
 
-      if (pathname.startsWith('/dashboard/user') && payload.role === 'superadmin') {
-        return NextResponse.redirect(new URL('/dashboard/admin', request.url));
-      }
-    } catch (error) {
-      console.error('Error verificando permisos:', error);
-      return NextResponse.redirect(new URL('/login', request.url));
+    if (
+      (pathname.startsWith('/dashboard/admin') || pathname.startsWith('/users')) &&
+      payload.role !== 'superadmin'
+    ) {
+      return NextResponse.redirect(new URL('/dashboard/user', request.url));
+    }
+
+    if (pathname.startsWith('/dashboard/user') && payload.role === 'superadmin') {
+      return NextResponse.redirect(new URL('/dashboard/admin', request.url));
     }
   }
 
   if (pathname === '/') {
     if (token) {
-      try {
-        const payload = JSON.parse(
-          Buffer.from(token.split('.')[1], 'base64').toString()
-        );
-        
+      const payload = decodeJwt(token);
+      if (payload) {
         if (payload.role === 'superadmin') {
           return NextResponse.redirect(new URL('/dashboard/admin', request.url));
         } else {
           return NextResponse.redirect(new URL('/dashboard/user', request.url));
         }
-      } catch (error) {
-        return NextResponse.redirect(new URL('/login', request.url));
       }
+      return NextResponse.redirect(new URL('/login', request.url));
     } else {
       return NextResponse.redirect(new URL('/login', request.url));
     }

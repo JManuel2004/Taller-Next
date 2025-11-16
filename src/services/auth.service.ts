@@ -53,17 +53,10 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
-    try {
-      await httpClient.post('/auth/logout');
-    } catch (error) {
-      console.error('Error en logout:', error);
-    } finally {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        
-        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
   }
 

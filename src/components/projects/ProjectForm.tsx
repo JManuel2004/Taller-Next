@@ -17,12 +17,31 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   onCancel,
   isLoading = false,
 }) => {
+  console.log('ProjectForm render', { project: project ? { id: project.id, title: project.title } : null });
+  
   const [formData, setFormData] = useState<CreateProjectRequest>({
     title: project?.title || '',
     description: project?.description || '',
     status: project?.status || 'pending',
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  useEffect(() => {
+    if (project) {
+      setFormData({
+        title: project.title || '',
+        description: project.description || '',
+        status: project.status || 'pending',
+      });
+    } else {
+      setFormData({
+        title: '',
+        description: '',
+        status: 'pending',
+      });
+    }
+    setErrors({});
+  }, [project]);
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
@@ -42,6 +61,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       return;
     }
 
+   
     await onSubmit(formData);
   };
 
