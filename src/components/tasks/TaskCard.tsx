@@ -94,12 +94,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           {onView && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => onView(task.id)}
+              className="w-full"
             >
               Ver
             </Button>
@@ -109,6 +110,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               variant="secondary"
               size="sm"
               onClick={() => onEdit(task)}
+              className="w-full"
             >
               Editar
             </Button>
@@ -118,6 +120,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               variant="danger"
               size="sm"
               onClick={() => onDelete(task.id)}
+              className="w-full"
             >
               Eliminar
             </Button>

@@ -194,46 +194,64 @@ export default function ProjectsPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.slice((page - 1) * perPage, page * perPage).map((project) => (
-              <Card key={project.id} className="p-4">
-                <h3 className="font-bold text-lg mb-1 text-gray-900">{project.title}</h3>
-                <p className="text-gray-600 text-sm mb-4">{project.description}</p>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    onClick={() => router.push(`/projects/${project.id}/tasks`)}
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                  >
-                    Ver Tareas
-                  </Button>
-                  <Button
-                    onClick={() => handleAddTaskClick(project)}
-                    variant="primary"
-                    size="sm"
-                    className="w-full"
-                  >
-                    Añadir Tarea
-                  </Button>
-                  <Button
-                    onClick={() => handleEdit(project)}
-                    variant="secondary"
-                    size="sm"
-                    className="w-full"
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    onClick={() => handleDelete(project.id)}
-                    variant="danger"
-                    size="sm"
-                    className="w-full"
-                  >
-                    Eliminar
-                  </Button>
-                </div>
-              </Card>
-            ))}
+            {projects.slice((page - 1) * perPage, page * perPage).map((project) => {
+              const statusColors: Record<string, string> = {
+                pending: 'bg-yellow-100 text-yellow-800',
+                'in-progress': 'bg-blue-100 text-blue-800',
+                completed: 'bg-green-100 text-green-800',
+              };
+              const statusLabels: Record<string, string> = {
+                pending: 'Pendiente',
+                'in-progress': 'En Progreso',
+                completed: 'Completado',
+              };
+
+              return (
+                <Card key={project.id} className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-lg text-gray-900">{project.title}</h3>
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[project.status] || 'bg-gray-100 text-gray-800'}`}>
+                      {statusLabels[project.status] || project.status}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-4">{project.description}</p>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      onClick={() => router.push(`/projects/${project.id}/tasks`)}
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                    >
+                      Ver Tareas
+                    </Button>
+                    <Button
+                      onClick={() => handleAddTaskClick(project)}
+                      variant="primary"
+                      size="sm"
+                      className="w-full"
+                    >
+                      Añadir Tarea
+                    </Button>
+                    <Button
+                      onClick={() => handleEdit(project)}
+                      variant="secondary"
+                      size="sm"
+                      className="w-full"
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      onClick={() => handleDelete(project.id)}
+                      variant="danger"
+                      size="sm"
+                      className="w-full"
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
           </div>
 
           {/* Paginación cliente */}
