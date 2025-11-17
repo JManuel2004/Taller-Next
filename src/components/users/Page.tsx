@@ -11,6 +11,7 @@ import {
   Button,
   Modal,
   LoadingSpinner,
+  ConfirmDialog,
 } from '@/components';
 import { useAuth } from '@/context';
 import { userService } from '@/services';
@@ -27,6 +28,11 @@ export default function UsersPage() {
   const [error, setError] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const perPage = 10; // paginación cliente para usuarios
 
   const loadUsers = React.useCallback(async () => {
     try {
@@ -92,16 +98,25 @@ export default function UsersPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Seguro que quieres eliminar este usuario?')) return;
+  const handleDelete = (id: string) => {
+    setConfirmId(id);
+    setIsConfirmOpen(true);
+  };
 
+  const confirmDelete = async () => {
+    if (!confirmId) return;
     try {
-      await userService.delete(id);
+      setIsDeleting(true);
+      setError('');
+      await userService.delete(confirmId);
       await loadUsers();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Error al eliminar usuario';
-      alert(message);
+      const message = err instanceof Error ? err.message : 'Error al eliminar usuario';
+      setError(message);
+    } finally {
+      setIsDeleting(false);
+      setIsConfirmOpen(false);
+      setConfirmId(null);
     }
   };
 
@@ -161,49 +176,57 @@ export default function UsersPage() {
         <CardHeader>
           <CardTitle>Listado de usuarios</CardTitle>
         </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <LoadingSpinner size="lg" />
-            </div>
-          ) : users.length === 0 ? (
-            <p className="text-gray-600">No hay usuarios registrados.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-4 py-2 font-semibold text-gray-700">
-                      Nombre
-                    </th>
-                    <th className="px-4 py-2 font-semibold text-gray-700">
-                      Email
-                    </th>
-                    <th className="px-4 py-2 font-semibold text-gray-700">
-                      Rol
-                    </th>
-                    <th className="px-4 py-2 font-semibold text-gray-700">
-                      Estado
-                    </th>
-                    <th className="px-4 py-2 font-semibold text-gray-700">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => (
-                    <UserRow
-                      key={u.id}
-                      user={u}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : users.length === 0 ? (
+              <p className="text-gray-600">No hay usuarios registrados.</p>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 bg-gray-50">
+                        <th className="px-4 py-2 font-semibold text-gray-700">Nombre</th>
+                        <th className="px-4 py-2 font-semibold text-gray-700">Email</th>
+                        <th className="px-4 py-2 font-semibold text-gray-700">Rol</th>
+                        <th className="px-4 py-2 font-semibold text-gray-700">Estado</th>
+                        <th className="px-4 py-2 font-semibold text-gray-700">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.slice((page - 1) * perPage, page * perPage).map((u) => (
+                        <UserRow
+                          key={u.id}
+                          user={u}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {users.length > perPage && (
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      Mostrando {Math.min(users.length, (page - 1) * perPage + 1)} - {Math.min(page * perPage, users.length)} de {users.length}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                        Anterior
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page * perPage >= users.length}>
+                        Siguiente
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
       </Card>
 
       <Modal
@@ -226,6 +249,16 @@ export default function UsersPage() {
           />
         )}
       </Modal>
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        title="Eliminar usuario"
+        message="¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={confirmDelete}
+        onClose={() => setIsConfirmOpen(false)}
+        isLoading={isDeleting}
+      />
     </DashboardLayout>
   );
 }

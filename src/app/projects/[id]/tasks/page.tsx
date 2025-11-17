@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { DashboardLayout, TaskCard, Card, Button, LoadingSpinner, Modal, TaskForm } from '@/components';
+import { DashboardLayout, TaskCard, Card, Button, LoadingSpinner, Modal, TaskForm, ConfirmDialog } from '@/components';
 import { taskService, projectService } from '@/services';
 import { Task, Project, CreateTaskRequest, UpdateTaskRequest } from '@/types';
 import { useAuth } from '@/context';
@@ -18,6 +18,9 @@ export default function ProjectTasksPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const projectId = params.id as string;
 
@@ -60,16 +63,25 @@ export default function ProjectTasksPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
-      return;
-    }
+  const handleDelete = (id: string) => {
+    setConfirmId(id);
+    setIsConfirmOpen(true);
+  };
 
+  const confirmDelete = async () => {
+    if (!confirmId) return;
     try {
-      await taskService.delete(id);
+      setIsDeleting(true);
+      setError('');
+      await taskService.delete(confirmId);
       await loadData();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al eliminar tarea');
+      const message = err instanceof Error ? err.message : 'Error al eliminar tarea';
+      setError(message);
+    } finally {
+      setIsDeleting(false);
+      setIsConfirmOpen(false);
+      setConfirmId(null);
     }
   };
 
@@ -241,6 +253,16 @@ export default function ProjectTasksPage() {
           isLoading={isSubmitting}
         />
       </Modal>
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        title="Eliminar tarea"
+        message="¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={confirmDelete}
+        onClose={() => setIsConfirmOpen(false)}
+        isLoading={isDeleting}
+      />
     </DashboardLayout>
   );
 }

@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { DashboardLayout, ProjectForm, Modal, Button, LoadingSpinner, Card } from '@/components';
-import { projectService } from '@/services';
-import { Project, CreateProjectRequest, UpdateProjectRequest } from '@/types';
+import { DashboardLayout, ProjectForm, Modal, Button, LoadingSpinner, Card, TaskForm, ConfirmDialog } from '@/components';
+import { projectService, taskService } from '@/services';
+import { Project, CreateProjectRequest, UpdateProjectRequest, CreateTaskRequest, UpdateTaskRequest } from '@/types';
 import { useAuth } from '@/context';
 
 export default function ProjectsPage() {
@@ -16,6 +16,13 @@ export default function ProjectsPage() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>('');
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const perPage = 6; // paginación cliente
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [selectedProjectForTask, setSelectedProjectForTask] = useState<Project | null>(null);
 
   const loadProjects = React.useCallback(async () => {
     try {
@@ -50,16 +57,25 @@ export default function ProjectsPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este proyecto?')) {
-      return;
-    }
+  const handleDelete = (id: string) => {
+    setConfirmId(id);
+    setIsConfirmOpen(true);
+  };
 
+  const confirmDelete = async () => {
+    if (!confirmId) return;
     try {
-      await projectService.delete(id);
+      setIsDeleting(true);
+      setError('');
+      await projectService.delete(confirmId);
       await loadProjects();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al eliminar proyecto');
+      const message = err instanceof Error ? err.message : 'Error al eliminar proyecto';
+      setError(message);
+    } finally {
+      setIsDeleting(false);
+      setIsConfirmOpen(false);
+      setConfirmId(null);
     }
   };
 
@@ -93,6 +109,16 @@ export default function ProjectsPage() {
     setIsModalOpen(false);
     setEditingProject(null);
     setError(''); 
+  };
+
+  const handleAddTaskClick = (project: Project) => {
+    setSelectedProjectForTask(project);
+    setIsTaskModalOpen(true);
+  };
+
+  const handleTaskModalClose = () => {
+    setIsTaskModalOpen(false);
+    setSelectedProjectForTask(null);
   };
 
  
@@ -166,44 +192,67 @@ export default function ProjectsPage() {
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
-            <Card key={project.id} className="p-4">
-              <h3 className="font-bold text-lg mb-1">{project.title}</h3>
-              <p className="text-gray-700 mb-2">{project.description}</p>
-              <div className="flex gap-2 mt-2">
-                <Button
-                  onClick={() => router.push(`/projects/${project.id}/tasks`)}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Ver Tareas
+        <>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {projects.slice((page - 1) * perPage, page * perPage).map((project) => (
+              <Card key={project.id} className="p-4">
+                <h3 className="font-bold text-lg mb-1 text-gray-900">{project.title}</h3>
+                <p className="text-gray-600 text-sm mb-4">{project.description}</p>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={() => router.push(`/projects/${project.id}/tasks`)}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    Ver Tareas
+                  </Button>
+                  <Button
+                    onClick={() => handleAddTaskClick(project)}
+                    variant="primary"
+                    size="sm"
+                    className="w-full"
+                  >
+                    Añadir Tarea
+                  </Button>
+                  <Button
+                    onClick={() => handleEdit(project)}
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    onClick={() => handleDelete(project.id)}
+                    variant="danger"
+                    size="sm"
+                    className="w-full"
+                  >
+                    Eliminar
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Paginación cliente */}
+          {projects.length > perPage && (
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Mostrando {Math.min(projects.length, (page - 1) * perPage + 1)} - {Math.min(page * perPage, projects.length)} de {projects.length}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                  Anterior
                 </Button>
-                <Button
-                  onClick={() => router.push(`/projects/${project.id}/add-task`)}
-                  variant="primary"
-                  className="flex-1"
-                >
-                  Añadir Tarea
-                </Button>
-                <Button
-                  onClick={() => handleEdit(project)}
-                  variant="secondary"
-                  className="flex-1"
-                >
-                  Editar
-                </Button>
-                <Button
-                  onClick={() => handleDelete(project.id)}
-                  variant="danger"
-                  className="flex-1"
-                >
-                  Eliminar
+                <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page * perPage >= projects.length}>
+                  Siguiente
                 </Button>
               </div>
-            </Card>
-          ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal de creación/edición */}
@@ -225,7 +274,46 @@ export default function ProjectsPage() {
           isLoading={isSubmitting}
         />
       </Modal>
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        title="Eliminar proyecto"
+        message="¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={confirmDelete}
+        onClose={() => setIsConfirmOpen(false)}
+        isLoading={isDeleting}
+      />
+
+      {/* Modal de creación de tarea desde proyecto */}
+      <Modal
+        isOpen={isTaskModalOpen}
+        onClose={handleTaskModalClose}
+        title={`Nueva Tarea - ${selectedProjectForTask?.title || ''}`}
+        size="lg"
+      >
+        <TaskForm
+          projects={selectedProjectForTask ? [selectedProjectForTask] : []}
+          onSubmit={async (data) => {
+            try {
+              setIsSubmitting(true);
+              setError('');
+              await taskService.create(data as CreateTaskRequest);
+              setIsTaskModalOpen(false);
+              setSelectedProjectForTask(null);
+            } catch (err) {
+              const errorMessage = err instanceof Error ? err.message : 'Error al crear la tarea';
+              setError(errorMessage);
+            } finally {
+              setIsSubmitting(false);
+            }
+          }}
+          onCancel={handleTaskModalClose}
+          isLoading={isSubmitting}
+        />
+      </Modal>
     </DashboardLayout>
   );
 }
+
 

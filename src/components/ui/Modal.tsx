@@ -51,7 +51,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] overflow-y-auto"
+      className="fixed inset-0 z-9999 overflow-y-auto"
       aria-labelledby="modal-title"
       role="dialog"
       aria-modal="true"
@@ -59,7 +59,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
         <div
-          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-[9998]"
+          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-9998"
           onClick={onClose}
         ></div>
 
@@ -71,7 +71,7 @@ export const Modal: React.FC<ModalProps> = ({
         {/* Modal panel */}
         <div
           className={`
-            relative z-[9999] inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full
+            relative z-9999 inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full
             ${sizeStyles[size]}
           `}
           style={{ position: 'relative' }}
