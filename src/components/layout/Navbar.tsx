@@ -28,10 +28,10 @@ export const Navbar: React.FC = () => {
             onClick={() => router.push('/dashboard/admin')}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
           >
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">P</span>
+            <div className="w-10 h-10 bg-blue-900 rounded-lg flex items-center justify-center shadow-md">
+              <span className="text-white font-bold text-sm">TP</span>
             </div>
-            <span className="text-lg font-bold text-gray-900">Project</span>
+            <span className="text-lg font-bold text-gray-900">TuliosProjects</span>
           </div>
 
           {/* Navigation Links */}
